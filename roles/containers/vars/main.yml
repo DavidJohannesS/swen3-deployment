@@ -1,0 +1,72 @@
+---
+containers:
+  - container_name: "paperless_postgres"
+    image: "postgres:17.2"
+    options: >-
+      --network host
+      -p 5432:5432
+      -v pgdata:/var/lib/postgresql/data
+      -e POSTGRES_USER=paperless
+      -e POSTGRES_PASSWORD=admin
+      -e POSTGRES_DB=paperless
+    volumes: ['pgdata']
+
+  - container_name: elasticsearch
+    image: elasticsearch:9.1.5
+    options: >-
+      --network host
+      -p 9200:9200
+      -e network.host=0.0.0.0
+      -v esdata:/usr/share/elasticsearch/data
+      -e discovery.type=single-node
+      -e xpack.security.enabled=false
+      -e xpack.security.http.ssl.enabled=false
+    volumes: ['esdata']
+
+  - container_name: redpanda
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.2
+    options: >-
+      --network host
+      -p 9092:9092
+      -p 9644:9644
+      -v redpanda-data:/var/lib/redpanda/data
+      --ulimit nofile=65536:65536
+      --rm
+      -e REDPANDA_AUTO_CREATE_TOPICS=true
+      -e REDPANDA_ENABLE_SASL=false
+      -e REDPANDA_DEVELOPER_MODE=true
+      -e REDPANDA_RPC_PORT=33145
+      -e REDPANDA_ADVERTISED_KAFKA_API=PLAINTEXT://localhost:9092
+      -e REDPANDA_ADVERTISED_RPC_API=PLAINTEXT://localhost:33145
+      -e REDPANDA_KAFKA_API=PLAINTEXT://0.0.0.0:9092
+      -e REDPANDA_RPC_API=PLAINTEXT://0.0.0.0:33145
+    volumes: ['redpanda-data']
+
+  - container_name: redpanda-console
+    image: docker.redpanda.com/redpandadata/console:latest
+    options: >-
+      --network host
+      -p 8080:8080
+      -e KAFKA_BROKERS=localhost:9092
+      -e CONSOLE_BASE_PATH=http://localhost:8080
+      -e KAFKA_SCHEMA_REGISTRY=
+    volumes: []
+
+  - container_name: elastichq
+    image: elastichq/elasticsearch-hq
+    options: >-
+      --network host
+      -p 5000:5000
+    volumes: []
+
+  - container_name: minio
+    image: quay.io/minio/minio
+    options: >-
+      --network host
+      -p 9000:9000
+      -p 9001:9001
+      -v minio-data:/data
+      -e MINIO_ROOT_USER=admin
+      -e MINIO_ROOT_PASSWORD=admin123
+    command: minio server /data --console-address :9001
+    volumes: ['minio-data']

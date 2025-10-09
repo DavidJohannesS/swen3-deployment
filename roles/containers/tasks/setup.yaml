@@ -1,0 +1,109 @@
+- name: Setup Paperless LocalDev
+  tags:
+    - setup
+    - reset
+  block:
+
+    - name: Check if container image exists
+      ansible.builtin.shell: docker image inspect "{{ item.image }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ containers }}"
+      register: image_check
+      changed_when: false
+      failed_when: false
+      loop_control:
+        label: Checking image "{{ item.image }}"
+
+    - name: Pair containers with image check results
+      ansible.builtin.set_fact:
+        container_image_status: "{{ containers | zip(image_check.results) | list }}"
+
+    - name: Pull container image if missing
+      ansible.builtin.shell: docker pull "{{ item.0.image }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ container_image_status }}"
+      loop_control:
+        label: Pulling image "{{ item.0.image }}"
+      when: item.1.rc != 0
+      changed_when: true
+
+    - name: Check if Docker volume exists
+      ansible.builtin.shell: docker volume inspect "{{ item }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ containers | map(attribute='volumes') | flatten | unique }}"
+      register: volume_check
+      changed_when: false
+      failed_when: false
+      loop_control:
+        label: Checking volume "{{ item }}"
+      when: item != ""
+
+    - name: Pair volumes with check results
+      ansible.builtin.set_fact:
+        volume_status: "{{ containers | map(attribute='volumes') | flatten | unique | zip(volume_check.results) | list }}"
+
+    - name: Create Docker volume if missing
+      ansible.builtin.shell: docker volume create "{{ item.0 }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ volume_status }}"
+      loop_control:
+        label: Creating volume "{{ item.0 }}"
+      when: item.0 != "" and item.1.rc != 0
+      changed_when: true
+
+    - name: Check if container exists
+      ansible.builtin.shell: docker ps -a --format '{{ "{{.Names}}" }}' | grep -w "{{ item.container_name }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ containers }}"
+      register: container_check
+      changed_when: false
+      failed_when: false
+      loop_control:
+        label: Checking container "{{ item.container_name }}"
+
+    - name: Pair containers with existence check
+      ansible.builtin.set_fact:
+        container_status: "{{ containers | zip(container_check.results) | list }}"
+
+    - name: Create container if missing
+      ansible.builtin.shell: |
+        docker run -d --name "{{ item.0.container_name }}" {{ item.0.options }} "{{ item.0.image }}"{% if item.0.command is defined and item.0.command != '' %}{% if item.0.command is string %} {{ item.0.command }}{% else %} {{ item.0.command | join(' ') }}{% endif %}{% endif %}
+      args:
+        executable: /bin/bash
+      loop: "{{ container_status }}"
+      loop_control:
+        label: Creating container "{{ item.0.container_name }}"
+      when: item.1.rc != 0
+      changed_when: true
+      tags: skip_ansible_lint
+
+    - name: Check if container is running
+      ansible.builtin.shell: docker inspect -f '{{ "{{.State.Running}}" }}' "{{ item.container_name }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ containers }}"
+      register: running_check
+      changed_when: false
+      failed_when: false
+      loop_control:
+        label: Checking if "{{ item.container_name }}" is running
+
+    - name: Pair containers with running status
+      ansible.builtin.set_fact:
+        running_status: "{{ containers | zip(running_check.results) | list }}"
+
+    - name: Start container if stopped
+      ansible.builtin.shell: docker start "{{ item.0.container_name }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ running_status }}"
+      loop_control:
+        label: Starting container "{{ item.0.container_name }}"
+      when: item.1.stdout != "true"
+      changed_when: true
+      tags: skip_ansible_lint

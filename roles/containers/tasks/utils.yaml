@@ -1,0 +1,42 @@
+---
+- name: Remove Paperless LocalDev
+  tags:
+    - reset
+    - remove
+  block:
+    - name: Stop containers if running
+      ansible.builtin.shell: |
+        docker inspect -f '{{ "{{.State.Running}}" }}' "{{ item.container_name }}" | grep true >/dev/null 2>&1 && \
+        docker stop "{{ item.container_name }}" || true
+      args:
+        executable: /bin/bash
+      loop: "{{ containers }}"
+      loop_control:
+        label: "{{ item.container_name }}"
+      changed_when: true
+      tags: skip_ansible_lint
+
+    - name: Remove containers if exist
+      ansible.builtin.shell: |
+        docker ps -a --format '{{ "{{.Names}}" }}' | grep -w "{{ item.container_name }}" >/dev/null 2>&1 && \
+        docker rm "{{ item.container_name }}" || true
+      args:
+        executable: /bin/bash
+      loop: "{{ containers }}"
+      loop_control:
+        label: "{{ item.container_name }}"
+      changed_when: true
+      tags: skip_ansible_lint
+
+    - name: Remove Docker volumes if exist
+      ansible.builtin.shell: |
+        docker volume inspect "{{ item }}" >/dev/null 2>&1 && \
+        docker volume rm "{{ item }}" || true
+      args:
+        executable: /bin/bash
+      loop: "{{ containers | map(attribute='volumes') | flatten }}"
+      loop_control:
+        label: "{{ item }}"
+      when: item != ""
+      changed_when: true
+      tags: skip_ansible_lint
