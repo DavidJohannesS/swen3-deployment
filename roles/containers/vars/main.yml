@@ -31,7 +31,6 @@ containers:
       -p 9644:9644
       -v redpanda-data:/var/lib/redpanda/data
       --ulimit nofile=65536:65536
-      --rm
       -e REDPANDA_AUTO_CREATE_TOPICS=true
       -e REDPANDA_ENABLE_SASL=false
       -e REDPANDA_DEVELOPER_MODE=true

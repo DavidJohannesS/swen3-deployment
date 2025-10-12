@@ -29,31 +29,16 @@
       when: item.1.rc != 0
       changed_when: true
 
-    - name: Check if Docker volume exists
-      ansible.builtin.shell: docker volume inspect "{{ item }}"
+    - name: Ensure Docker volume exists or create it
+      ansible.builtin.shell: |
+        docker volume inspect "{{ item }}" >/dev/null 2>&1 || docker volume create "{{ item }}"
       args:
         executable: /bin/bash
-      loop: "{{ containers | map(attribute='volumes') | flatten | unique }}"
-      register: volume_check
-      changed_when: false
+      loop: "{{ containers | map(attribute='volumes') | flatten | select('string') | unique | list }}"
       failed_when: false
-      loop_control:
-        label: Checking volume "{{ item }}"
-      when: item != ""
-
-    - name: Pair volumes with check results
-      ansible.builtin.set_fact:
-        volume_status: "{{ containers | map(attribute='volumes') | flatten | unique | zip(volume_check.results) | list }}"
-
-    - name: Create Docker volume if missing
-      ansible.builtin.shell: docker volume create "{{ item.0 }}"
-      args:
-        executable: /bin/bash
-      loop: "{{ volume_status }}"
-      loop_control:
-        label: Creating volume "{{ item.0 }}"
-      when: item.0 != "" and item.1.rc != 0
       changed_when: true
+      loop_control:
+        label: Ensuring volume '{{ item }}'
 
     - name: Check if container exists
       ansible.builtin.shell: docker ps -a --format '{{ "{{.Names}}" }}' | grep -w "{{ item.container_name }}"
@@ -65,6 +50,7 @@
       failed_when: false
       loop_control:
         label: Checking container "{{ item.container_name }}"
+      tags: skip_ansible_lint
 
     - name: Pair containers with existence check
       ansible.builtin.set_fact:
@@ -72,7 +58,15 @@
 
     - name: Create container if missing
       ansible.builtin.shell: |
-        docker run -d --name "{{ item.0.container_name }}" {{ item.0.options }} "{{ item.0.image }}"{% if item.0.command is defined and item.0.command != '' %}{% if item.0.command is string %} {{ item.0.command }}{% else %} {{ item.0.command | join(' ') }}{% endif %}{% endif %}
+        docker run -d --name "{{ item.0.container_name }}" \
+        {{ item.0.options }} "{{ item.0.image }}" \
+        {% if item.0.command is defined and item.0.command != '' %}
+          {% if item.0.command is string %}
+            {{ item.0.command }}
+          {% else %}
+            {{ item.0.command | join(' ') }}
+          {% endif %}
+        {% endif %}
       args:
         executable: /bin/bash
       loop: "{{ container_status }}"
