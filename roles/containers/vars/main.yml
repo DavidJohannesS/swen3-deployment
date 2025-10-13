@@ -55,7 +55,7 @@ containers:
     image: elastichq/elasticsearch-hq
     options: >-
       --network host
-      -p 5000:5000
+      -p 5001:5001
     volumes: []
 
   - container_name: minio
