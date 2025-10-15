@@ -68,6 +68,7 @@
 
     - name: Run paperless containers
       ansible.builtin.shell: |
+        docker stop "{{ item.container_name }}"
         docker rm "{{ item.container_name }}"
         docker run -d --name "{{ item.container_name }}" \
           {{ item.options }} "{{ item.image }}"
