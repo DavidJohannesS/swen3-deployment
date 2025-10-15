@@ -1,14 +1,27 @@
 ---
 # tasks file for postgres
 - name: Setup
-  ansible.builtin.include_tasks: setup.yaml
+  ansible.builtin.include_tasks: setup_dependencies.yaml
   tags:
     - reset
     - setup
+    - paperless
 
 - name: Remove/Reset
-  ansible.builtin.include_tasks: utils.yaml
+  ansible.builtin.include_tasks: remove.yaml
   tags:
     - reset
     - remove
     - never
+
+- name: Setup Paperless
+  ansible.builtin.include_tasks: setup_paperless.yaml
+  tags:
+    - reset
+    - paperless
+
+- name: Remove Paperless
+  ansible.builtin.include_tasks: remove_paperless.yaml
+  tags:
+    - reset
+    - remove_paperless

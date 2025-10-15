@@ -2,6 +2,7 @@
   tags:
     - setup
     - reset
+    - paperless
   block:
 
     - name: Check if container image exists

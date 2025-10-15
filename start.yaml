@@ -4,3 +4,5 @@
   connection: local
   roles:
     - containers
+  vars_files:
+    - roles/containers/vars/paperless.yaml

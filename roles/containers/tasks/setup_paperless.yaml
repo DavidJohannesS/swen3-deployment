@@ -1,0 +1,79 @@
+---
+- name: Setup Paperless LocalDev
+  tags:
+    - reset
+    - paperless
+  block:
+    - name: Setup docker dir
+      ansible.builtin.file:
+        path: "{{ item.docker_dir }}"
+        state: directory
+        owner: "{{ ansible_env.USER }}"
+        group: "{{ ansible_env.USER }}"
+        mode: '0755'
+      become: true
+      loop: "{{ paperless }}"
+
+    - name: Setup application dir
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ ansible_env.USER }}"
+        group: "{{ ansible_env.USER }}"
+        mode: '0755'
+      become: true
+      loop: "{{ paperless }}"
+
+    - name: Pull git repo
+      ansible.builtin.git:
+        repo: "{{ item.git_url }}"
+        dest: "{{ item.path }}"
+        version: 'main'
+      loop: "{{ paperless }}"
+
+    - name: Compile application
+      ansible.builtin.shell: |
+        cd "{{ item.path }}"
+        {{ item.compile }}
+      loop: "{{ paperless }}"
+      changed_when: true
+
+    - name: Render Dockerfiles for all services
+      ansible.builtin.template:
+        src: "{{ item.docker_template }}"
+        dest: "{{ item.docker_dir }}/{{ item.name }}"
+        mode: '0644'
+      loop: "{{ paperless }}"
+      loop_control:
+        label: "Rendering Dockerfile for {{ item.name }}"
+      vars:
+        docker_dir: "{{ item.docker_dir }}"
+        path: "{{ item.name }}"
+
+    - name: Build Docker images for all services
+      ansible.builtin.shell: |
+        docker build -f "{{ item.docker_dir }}/{{ item.name }}" \
+        -t {{ item.container_name }}:latest {{ item.path }}
+      args:
+        chdir: "{{ item.docker_dir }}"
+      loop: "{{ paperless }}"
+      loop_control:
+        label: "Building image for {{ item.name }}"
+      changed_when: true
+
+    - name: Show container run command
+      ansible.builtin.debug:
+        msg: 'docker run -d --name "{{ item.container_name }}" {{ item.options }} "{{ item.image }}"'
+      loop: "{{ paperless }}"
+
+    - name: Run paperless containers
+      ansible.builtin.shell: |
+        docker rm "{{ item.container_name }}"
+        docker run -d --name "{{ item.container_name }}" \
+          {{ item.options }} "{{ item.image }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ paperless }}"
+      loop_control:
+        label: "Running container {{ item.name }}"
+      changed_when: true
