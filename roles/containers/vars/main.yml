@@ -69,3 +69,9 @@ containers:
       -e MINIO_ROOT_PASSWORD=admin123
     command: minio server /data --console-address :9001
     volumes: ['minio-data']
+  - container_name: ai-server
+    image: ollama/ollama
+    options: >-
+      --network host
+      -p 11434:11434
+    volumes: []

@@ -10,7 +10,7 @@ if [[ "$1" == "--no-pwd" ]];then
 else
     cmd="ansible-playbook start.yaml --ask-become-pass --tags"
 fi
-containers=("minio" "elasticsearch" "elastichq" "redpanda" "redpanda-console" "paperless_postgres" "paperless-backend" "paperless-worker")
+containers=("ai-server" "minio" "elasticsearch" "elastichq" "redpanda" "redpanda-console" "paperless_postgres" "paperless-backend" "paperless-worker")
 function print_info()
 {
     echo
