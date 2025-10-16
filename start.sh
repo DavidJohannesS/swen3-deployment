@@ -24,9 +24,18 @@ function print_info()
         dots=$(( max_width - ${#container} ))
         dotline=$(printf '.%.0s' $(seq 1 $dots))
         echo -e "[${container}]${dotline}${status_text}"
-    done
+        if [[ "$status" == "true" && -n "${ui_urls[$container]}" ]]; then
+            echo -e "  -> ${BLUE}UI:${RESET} ${ui_urls[$container]}"
+            echo
+        fi
+done
     echo
 }
+declare -A ui_urls=(
+    ["minio"]="http://localhost:9001"
+    ["elastichq"]="http://localhost:5000"
+    ["redpanda-console"]="http://localhost:8080"
+)
 options=(
     "Setup LocalDev"
     "Remove LocalDev"
