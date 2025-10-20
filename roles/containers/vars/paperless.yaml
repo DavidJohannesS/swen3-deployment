@@ -11,6 +11,7 @@ paperless:
     options: >-
       -p 8083:8083
       --network host
+
   - name: worker
     path: "/tmp/paperless/worker"
     git_url: "https://github.com/DavidJohannesS/swen3-workers.git"
@@ -21,4 +22,15 @@ paperless:
     compile: "./mvnw clean package -DskipTests"
     options: >-
       -p 8084:8084
+      --network host
+
+  - name: frontend
+    path: "/tmp/paperless/frontend"
+    git_url: "https://github.com/DavidJohannesS/swen3-frontend.git"
+    docker_dir: /tmp/paperless/dockerfiles
+    docker_template: frontend.Dockerfile.j2
+    container_name: paperless-frontend
+    image: paperless-frontend
+    options: >-
+      -p 8085:80
       --network host
