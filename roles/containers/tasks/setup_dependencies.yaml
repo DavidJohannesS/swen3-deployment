@@ -102,3 +102,15 @@
       when: item.1.stdout != "true"
       changed_when: true
       tags: skip_ansible_lint
+
+    - name: Ensure Ollama model is pulled
+      ansible.builtin.shell: |
+        docker exec ai-server ollama list | grep -w "{{ ollama_model }}" \
+        || docker exec ai-server ollama pull "{{ ollama_model }}"
+      args:
+        executable: /bin/bash
+      changed_when: true
+      vars:
+        ollama_model: mistral
+      loop_control:
+        label: "Ensuring Ollama model '{{ ollama_model }}'"

@@ -23,6 +23,14 @@ containers:
       -e xpack.security.http.ssl.enabled=false
     volumes: ['esdata']
 
+  - container_name: kibana
+    image: kibana:9.1.5
+    options: >-
+      --network host
+      -p 5601:5601
+      -e ELASTICSEARCH_HOSTS=http://localhost:9200
+    volumes: []
+
   - container_name: redpanda
     image: docker.redpanda.com/redpandadata/redpanda:v23.2.2
     options: >-
@@ -49,13 +57,6 @@ containers:
       -e KAFKA_BROKERS=localhost:9092
       -e CONSOLE_BASE_PATH=http://localhost:8080
       -e KAFKA_SCHEMA_REGISTRY=
-    volumes: []
-
-  - container_name: elastichq
-    image: elastichq/elasticsearch-hq
-    options: >-
-      --network host
-      -p 5001:5000
     volumes: []
 
   - container_name: minio

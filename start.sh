@@ -10,7 +10,7 @@ if [[ "$1" == "--no-pwd" ]];then
 else
     cmd="ansible-playbook start.yaml --ask-become-pass --tags"
 fi
-containers=("ai-server" "minio" "elasticsearch" "elastichq" "redpanda" "redpanda-console" "paperless_postgres" "paperless-backend" "paperless-worker" "paperless-frontend")
+containers=("ai-server" "minio" "elasticsearch" "kibana" "redpanda" "redpanda-console" "paperless_postgres" "paperless-backend" "paperless-worker" "paperless-frontend")
 function print_info()
 {
     echo
@@ -33,7 +33,7 @@ done
 }
 declare -A ui_urls=(
     ["minio"]="http://localhost:9001"
-    ["elastichq"]="http://localhost:5000"
+    ["kibana"]="http://localhost:5601"
     ["redpanda-console"]="http://localhost:8080"
     ["paperless-frontend"]="http://localhost:80"
 )
