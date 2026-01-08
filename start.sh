@@ -1,5 +1,4 @@
 #!/bin/bash
-
 GREEN="\033[38;5;82m"
 RESET="\033[0m"
 RED="\033[38;5;196m"
@@ -38,10 +37,9 @@ declare -A ui_urls=(
     ["paperless-frontend"]="http://localhost:80"
 )
 options=(
-    "Setup LocalDev"
-    "Remove LocalDev"
-    "Setup Paparless"
-    "Remove Paperless"
+    "Setup Paperless Application"
+    "Remove Shutdown Paperless Application"
+    "Integration Test"
     "Quit"
 )
 PS3="Selection: "
@@ -49,14 +47,19 @@ while true; do
     print_info
     echo -e "${YELLOW}### Menu ###${RESET}"
     echo
-    select opt in "${options[@]}";do
-        case $REPLY in
-            1) $cmd setup; break;;
-            2) $cmd remove; break;;
-            3) $cmd paperless; break;;
-            4) $cmd remove_paperless; break;;
-            5) echo "Exiting..." && exit;;
-            *) echo "Invalid"; break;;
-        esac
-    done
+    echo "1) Setup Paperless Application"
+    echo "2) Remove Shutdown Paperless Application"
+    echo "3) Integration Test"
+    echo "4) Quit"
+    echo
+    echo -n "Selection: "
+    read choice
+
+    case "$choice" in
+        1) $cmd setup;;
+        2) $cmd remove;;
+        3) $cmd test;;
+        4) echo "Exiting..." && exit;;
+        *) echo "Invalid selection";;
+    esac
 done

@@ -16,7 +16,7 @@ paperless:
     path: "/tmp/paperless/worker"
     git_url: "https://github.com/DavidJohannesS/swen3-workers.git"
     docker_dir: /tmp/paperless/dockerfiles
-    docker_template: backend.Dockerfile.j2
+    docker_template: worker.Dockerfile.j2
     container_name: paperless-worker
     image: paperless-worker
     compile: "./mvnw clean package -DskipTests"

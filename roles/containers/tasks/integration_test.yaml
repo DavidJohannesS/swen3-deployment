@@ -1,0 +1,52 @@
+---
+- name: Integration Test
+  tags:
+    - test
+  block:
+    - name: Upload test PDF to backend
+      ansible.builtin.shell: |
+        curl -s -X POST \
+          -F "file=@{{ role_path }}/files/containers.pdf" \
+          -F "title=Integration Test" \
+          http://localhost:8083/api/documents
+      register: upload_response
+      tags: skip_ansible_lint
+
+    - name: Extract document ID
+      set_fact:
+        doc_id: "{{ upload_response.stdout | from_json | json_query('id') }}"
+      tags: skip_ansible_lint
+
+    - name: Wait for OCR_DONE (status = 1)
+      ansible.builtin.shell: |
+        PGPASSWORD=admin psql -h localhost -U paperless -d paperless -t -A -F "" -c \
+        "SELECT status FROM document WHERE id = {{ doc_id }};"
+      register: status_query
+      until: status_query.stdout | trim | int == 1
+      retries: 60
+      delay: 5
+      tags: skip_ansible_lint
+
+    - name: Wait for SUMMARIZED (status = 2)
+      ansible.builtin.shell: |
+        PGPASSWORD=admin psql -h localhost -U paperless -d paperless -t -A -F "" -c \
+        "SELECT status FROM document WHERE id = {{ doc_id }};"
+      register: status_query
+      until: status_query.stdout | trim | int == 2
+      retries: 60
+      delay: 5
+      tags: skip_ansible_lint
+
+    - name: Wait for summary to appear in Elasticsearch
+      ansible.builtin.shell: |
+        curl -s "http://localhost:8083/api/documents/search?q={{ doc_id }}"
+      register: es_result
+      until: es_result.stdout | length > 10
+      retries: 60
+      delay: 5
+      tags: skip_ansible_lint
+
+    - name: Integration test completed
+      ansible.builtin.debug:
+        msg: "Document {{ doc_id }} successfully processed end-to-end."
+      tags: skip_ansible_lint

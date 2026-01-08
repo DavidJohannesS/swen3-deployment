@@ -6,6 +6,12 @@
     - setup
     - paperless
 
+- name: Remove Paperless
+  ansible.builtin.include_tasks: remove_paperless.yaml
+  tags:
+    - reset
+    - remove
+
 - name: Remove/Reset
   ansible.builtin.include_tasks: remove.yaml
   tags:
@@ -17,10 +23,9 @@
   ansible.builtin.include_tasks: setup_paperless.yaml
   tags:
     - reset
-    - paperless
+    - setup
 
-- name: Remove Paperless
-  ansible.builtin.include_tasks: remove_paperless.yaml
+- name: Integration Testing
+  ansible.builtin.include_tasks: integration_test.yaml
   tags:
-    - reset
-    - remove_paperless
+    - test

@@ -3,6 +3,7 @@
   tags:
     - reset
     - paperless
+    - setup
   block:
     - name: Setup docker dir
       ansible.builtin.file:
@@ -45,6 +46,14 @@
         dest: "{{ item.path }}/nginx.conf"
         mode: '0644'
       when: item.name == "frontend"
+      loop: "{{ paperless }}"
+
+    - name: Copy test XML for worker
+      ansible.builtin.copy:
+        src: "{{ role_path }}/files/test.xml"
+        dest: "{{ item.path }}/test.xml"
+        mode: '0644'
+      when: item.name == "worker"
       loop: "{{ paperless }}"
 
     - name: Render Dockerfiles for all services
